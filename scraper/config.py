@@ -11,7 +11,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import (Optional, Tuple)
+from typing import (Any, Dict, Optional, Tuple)
 from zoneinfo import ZoneInfo
 
 BANGKOK_TZ: ZoneInfo = ZoneInfo("Asia/Bangkok")
@@ -82,12 +82,32 @@ class ScraperConfig:
             ``output_dir/<slug>/``.
         workers: Number of concurrent worker threads.
         force: When ``True``, re-process videos already present in the output.
+        cookies: Optional path to a Netscape-format ``cookies.txt`` used to get
+            past region/age/bot walls.
+        cookies_from_browser: Optional browser name (e.g. ``chrome``,
+            ``safari``) to load cookies from directly.
     """
 
     url: str
     output_dir: Path
     workers: int
     force: bool
+    cookies: Optional[Path] = None
+    cookies_from_browser: Optional[str] = None
+
+    def auth_opts(self) -> Dict[str, Any]:
+        """Return yt_dlp options carrying cookie auth, empty when unset.
+
+        Returns:
+            A dict with ``cookiefile`` and/or ``cookiesfrombrowser`` set, or an
+            empty dict when no cookie source was configured.
+        """
+        opts: Dict[str, Any] = {}
+        if self.cookies is not None:
+            opts["cookiefile"] = str(self.cookies)
+        if self.cookies_from_browser is not None:
+            opts["cookiesfrombrowser"] = (self.cookies_from_browser,)
+        return opts
 
     def run_dir(self, slug: str) -> Path:
         """Return the per-run directory ``output_dir/<slug>``."""

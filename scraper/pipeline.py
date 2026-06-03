@@ -33,6 +33,7 @@ def process_video(
     audio_dir: Path,
     run_dir: Path,
     width: int,
+    auth_opts: Optional[Dict[str, Any]] = None,
 ) -> VideoRecord:
     """Process a single video into a complete record.
 
@@ -46,12 +47,13 @@ def process_video(
         audio_dir: Directory where the WAV file is written.
         run_dir: The run root, used to compute the relative ``audio_path``.
         width: Zero-padding width for the filename index.
+        auth_opts: Optional extra yt_dlp options (e.g. cookies) to merge in.
 
     Returns:
         A successful record, or an error record on failure.
     """
     try:
-        info: Dict[str, Any] = fetch_metadata(entry["url"])
+        info: Dict[str, Any] = fetch_metadata(entry["url"], auth_opts)
 
         title_raw: Optional[str] = info.get("title")
         snippets: Optional[List[TranscriptSnippet]]
@@ -60,7 +62,7 @@ def process_video(
         snippets, language, source = fetch_transcript(entry["video_id"], info)
 
         stem: str = _file_stem(entry["index"], entry["video_id"], width)
-        wav_path: Path = download_wav(entry["url"], audio_dir, stem)
+        wav_path: Path = download_wav(entry["url"], audio_dir, stem, auth_opts)
         audio_rel: str = str(wav_path.relative_to(run_dir))
 
         meta: Dict[str, Any] = metadata_fields(info)
@@ -103,14 +105,16 @@ def run(config: ScraperConfig) -> List[VideoRecord]:
     Returns:
         The records produced this run (excludes skipped videos).
     """
+    auth_opts: Dict[str, Any] = config.auth_opts()
+
     logger.info("Listing entries for %s", config.url)
-    entries: List[PlaylistEntry] = list_entries(config.url)
+    entries: List[PlaylistEntry] = list_entries(config.url, auth_opts)
     logger.info("Found %d video(s)", len(entries))
 
-    title: Optional[str] = playlist_title(config.url)
+    title: Optional[str] = playlist_title(config.url, auth_opts)
     if not title and entries:
         # Single video fallback: name the run from the video's own title.
-        title = fetch_metadata(entries[0]["url"]).get("title")
+        title = fetch_metadata(entries[0]["url"], auth_opts).get("title")
     slug: str = slugify(title, fallback=entries[0]["video_id"] if entries else "video")
 
     run_dir: Path
@@ -131,7 +135,7 @@ def run(config: ScraperConfig) -> List[VideoRecord]:
     if pending:
         with ThreadPoolExecutor(max_workers=config.workers) as executor:
             futures: Dict[Future, PlaylistEntry] = {
-                executor.submit(process_video, entry, audio_dir, run_dir, width): entry
+                executor.submit(process_video, entry, audio_dir, run_dir, width, auth_opts): entry
                 for entry in pending
             }
             for future in as_completed(futures):

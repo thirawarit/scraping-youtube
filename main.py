@@ -54,6 +54,24 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Re-process videos even if already present in the output.",
     )
+    parser.add_argument(
+        "--cookies",
+        type=Path,
+        default=None,
+        help=(
+            "Path to a Netscape-format cookies.txt. Use this to get past "
+            "region/age/bot walls (e.g. HTTP 403)."
+        ),
+    )
+    parser.add_argument(
+        "--cookies-from-browser",
+        type=str,
+        default=None,
+        help=(
+            "Load cookies directly from a browser (e.g. chrome, safari, firefox) "
+            "to get past region/age/bot walls."
+        ),
+    )
     return parser
 
 
@@ -87,6 +105,8 @@ def main(argv: list = sys.argv[1:]) -> int:
         output_dir=args.output_dir,
         workers=args.workers,
         force=args.force,
+        cookies=args.cookies,
+        cookies_from_browser=args.cookies_from_browser,
     )
 
     try:
