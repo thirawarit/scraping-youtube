@@ -1,0 +1,2 @@
+yt_dlp==2025.10.14
+youtube_transcript_api==1.2.4
