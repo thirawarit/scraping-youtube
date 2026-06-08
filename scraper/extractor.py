@@ -164,6 +164,13 @@ def download_wav(
         RuntimeError: If the expected WAV file was not produced.
     """
     audio_dir.mkdir(parents=True, exist_ok=True)
+    expected: Path = audio_dir / f"{file_stem}.wav"
+    # Resume support: skip re-downloading when a complete WAV already exists on
+    # disk. This makes resume robust even when a prior run was interrupted
+    # before data.jsonl was written.
+    if expected.exists() and expected.stat().st_size > 0:
+        logger.info("Audio already present, skipping download: %s", expected)
+        return expected
     outtmpl: str = str(audio_dir / f"{file_stem}.%(ext)s")
     opts: Dict[str, Any] = _merge_opts(
         {
@@ -182,7 +189,6 @@ def download_wav(
     with YoutubeDL(cast(Any, opts)) as ydl:
         ydl.download([video_url])
 
-    expected: Path = audio_dir / f"{file_stem}.wav"
     if not expected.exists():
         raise RuntimeError(f"Expected WAV not produced: {expected}")
     return expected
