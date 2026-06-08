@@ -82,6 +82,7 @@ def process_video(
             "transcript": snippets,
             "transcript_source": source,
             "audio_path": audio_rel,
+            "file_name": wav_path.name,
             "status": "ok",
             "error": None,
         }

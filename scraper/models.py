@@ -42,6 +42,7 @@ class VideoRecord(TypedDict):
     transcript: Optional[List[TranscriptSnippet]]
     transcript_source: Optional[str]
     audio_path: Optional[str]
+    file_name: Optional[str]
     status: str
     error: Optional[str]
 
@@ -75,6 +76,7 @@ def error_record(entry: PlaylistEntry, message: str) -> VideoRecord:
         "transcript": None,
         "transcript_source": None,
         "audio_path": None,
+        "file_name": None,
         "status": "error",
         "error": message,
     }
