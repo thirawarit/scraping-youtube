@@ -1,4 +1,4 @@
-"""Reading and writing the combined ``data.jsonl`` output.
+"""Reading and writing the combined ``metadata.jsonl`` output.
 
 Supports resume (collecting already-completed video ids) and an atomic,
 deterministic merge-write that combines existing and new records, ordered by
@@ -19,10 +19,12 @@ def load_done_ids(data_path: Path) -> Set[str]:
     """Collect video ids already successfully processed in an output file.
 
     Args:
-        data_path: Path to an existing ``data.jsonl`` (may not exist).
+        data_path: Path to an existing ``metadata.jsonl`` (may not exist).
 
     Returns:
-        The set of ``video_id`` values whose record has ``status == "ok"``.
+        The set of ``video_id`` values whose record has ``status == "ok"`` and a
+        non-empty ``transcript``. Records with a null/empty transcript are left
+        out so a re-run re-transcribes them (e.g. after a transient IP block).
         Returns an empty set if the file is missing.
     """
     done: Set[str] = set()
@@ -38,16 +40,20 @@ def load_done_ids(data_path: Path) -> Set[str]:
             except json.JSONDecodeError:
                 logger.warning("Skipping malformed JSONL line in %s", data_path)
                 continue
-            if record.get("status") == "ok" and record.get("video_id"):
+            if (
+                record.get("status") == "ok"
+                and record.get("video_id")
+                and record.get("transcript")
+            ):
                 done.add(record["video_id"])
     return done
 
 
 def load_existing_records(data_path: Path) -> List[VideoRecord]:
-    """Load all records from an existing ``data.jsonl`` file.
+    """Load all records from an existing ``metadata.jsonl`` file.
 
     Args:
-        data_path: Path to an existing ``data.jsonl`` (may not exist).
+        data_path: Path to an existing ``metadata.jsonl`` (may not exist).
 
     Returns:
         The parsed records; malformed lines are skipped. Empty if missing.
@@ -68,7 +74,7 @@ def load_existing_records(data_path: Path) -> List[VideoRecord]:
 
 
 def write_merged(data_path: Path, records: Iterable[VideoRecord]) -> None:
-    """Merge new records into ``data.jsonl`` and rewrite it atomically.
+    """Merge new records into ``metadata.jsonl`` and rewrite it atomically.
 
     Existing records are loaded and combined with ``records`` keyed by
     ``video_id`` (new records win), sorted by playlist ``index``, and written
@@ -76,7 +82,7 @@ def write_merged(data_path: Path, records: Iterable[VideoRecord]) -> None:
     writes from concurrent workers and yields deterministic ordering.
 
     Args:
-        data_path: Destination ``data.jsonl`` path.
+        data_path: Destination ``metadata.jsonl`` path.
         records: Newly produced records to merge in.
     """
     # Merge by video_id (new records win), then sort by playlist index for

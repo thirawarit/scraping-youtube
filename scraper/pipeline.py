@@ -2,7 +2,7 @@
 
 Ties the modules together: lists entries, skips already-done videos, processes
 each video (metadata, transcript, WAV) concurrently with a thread pool, and
-merges results into the combined ``data.jsonl``. A failure in one video is
+merges results into the combined ``metadata.jsonl``. A failure in one video is
 logged and recorded without aborting the run.
 """
 
@@ -97,7 +97,7 @@ def run(config: ScraperConfig) -> List[VideoRecord]:
 
     Lists entries, derives the run slug, skips already-processed videos (unless
     ``config.force``), processes the rest concurrently with a thread pool, and
-    merges the results into ``data.jsonl``.
+    merges the results into ``metadata.jsonl``.
 
     Args:
         config: The resolved runtime configuration.

@@ -167,7 +167,7 @@ def download_wav(
     expected: Path = audio_dir / f"{file_stem}.wav"
     # Resume support: skip re-downloading when a complete WAV already exists on
     # disk. This makes resume robust even when a prior run was interrupted
-    # before data.jsonl was written.
+    # before metadata.jsonl was written.
     if expected.exists() and expected.stat().st_size > 0:
         logger.info("Audio already present, skipping download: %s", expected)
         return expected

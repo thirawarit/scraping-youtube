@@ -1,6 +1,6 @@
 """Typed data structures and helpers for scraper output records.
 
-Defines the :class:`VideoRecord` schema written to ``data.jsonl`` (one object
+Defines the :class:`VideoRecord` schema written to ``metadata.jsonl`` (one object
 per line), along with the intermediate :class:`PlaylistEntry` and
 :class:`TranscriptSnippet` shapes and small helpers for building records.
 """
@@ -25,7 +25,7 @@ class PlaylistEntry(TypedDict):
 
 
 class VideoRecord(TypedDict):
-    """One fully processed video, serialized as a line in ``data.jsonl``."""
+    """One fully processed video, serialized as a line in ``metadata.jsonl``."""
 
     index: int
     video_id: str
@@ -50,7 +50,7 @@ def error_record(entry: PlaylistEntry, message: str) -> VideoRecord:
     """Build a failure record for a video that could not be processed.
 
     All metadata fields are set to ``None`` and ``status`` is ``"error"`` so
-    failed videos still appear in ``data.jsonl`` without aborting the run.
+    failed videos still appear in ``metadata.jsonl`` without aborting the run.
 
     Args:
         entry: The playlist entry that failed.

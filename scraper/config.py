@@ -114,15 +114,15 @@ class ScraperConfig:
         return self.output_dir / slug
 
     def data_path(self, slug: str) -> Path:
-        """Return the path to the run's combined ``data.jsonl`` file."""
-        return self.run_dir(slug) / "data.jsonl"
+        """Return the path to the run's combined ``metadata.jsonl`` file."""
+        return self.run_dir(slug) / "metadata.jsonl"
 
     def audio_dir(self, slug: str) -> Path:
         """Return the run's ``audio/`` directory for WAV files."""
         return self.run_dir(slug) / "audio"
 
     def paths_for(self, slug: str) -> Tuple[Path, Path, Path]:
-        """Return the run directory, ``data.jsonl`` path, and audio directory.
+        """Return the run directory, ``metadata.jsonl`` path, and audio directory.
 
         Args:
             slug: The normalized playlist/video slug naming the run.
