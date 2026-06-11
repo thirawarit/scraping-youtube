@@ -6,6 +6,7 @@ logging configuration, and the startup ``ffmpeg`` availability check.
 """
 
 import logging
+import os
 import shutil
 import time
 from dataclasses import dataclass
@@ -13,6 +14,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import (Any, Dict, Optional, Tuple)
 from zoneinfo import ZoneInfo
+
+from dotenv import load_dotenv
+from youtube_transcript_api.proxies import (ProxyConfig, WebshareProxyConfig)
 
 BANGKOK_TZ: ZoneInfo = ZoneInfo("Asia/Bangkok")
 LOG_DATEFMT: str = "%Y-%m-%d %H:%M:%S"
@@ -72,6 +76,33 @@ def check_ffmpeg() -> str:
     return ffmpeg_path
 
 
+def load_proxy_config() -> Optional[ProxyConfig]:
+    """Build a Webshare proxy config from ``.env`` credentials, if present.
+
+    Loads variables from a local ``.env`` file into the environment, then reads
+    ``proxy_username`` and ``proxy_password``. When *both* are set, returns a
+    :class:`WebshareProxyConfig`; otherwise returns ``None``. The proxy is used
+    only by ``youtube_transcript_api`` (not by yt_dlp).
+
+    Returns:
+        A configured :class:`WebshareProxyConfig`, or ``None`` when credentials
+        are absent.
+    """
+    load_dotenv()
+    proxy_username: Optional[str] = os.getenv("proxy_username")
+    proxy_password: Optional[str] = os.getenv("proxy_password")
+
+    if proxy_username and proxy_password:
+        logger.info("Loaded Webshare proxy config from .env for youtube_transcript_api")
+        return WebshareProxyConfig(
+            proxy_username=proxy_username,
+            proxy_password=proxy_password,
+        )
+
+    logger.info("No Webshare proxy credentials in .env; youtube_transcript_api runs direct")
+    return None
+
+
 @dataclass
 class ScraperConfig:
     """Resolved runtime options for a single scraper invocation.
@@ -86,6 +117,11 @@ class ScraperConfig:
             past region/age/bot walls.
         cookies_from_browser: Optional browser name (e.g. ``chrome``,
             ``safari``) to load cookies from directly.
+        transcripts: When ``True``, use ``youtube_transcript_api`` for
+            transcripts; otherwise rely solely on the yt_dlp auto-subtitle
+            fallback.
+        proxy_config: Optional Webshare proxy config applied only to
+            ``youtube_transcript_api`` requests.
     """
 
     url: str
@@ -94,6 +130,8 @@ class ScraperConfig:
     force: bool
     cookies: Optional[Path] = None
     cookies_from_browser: Optional[str] = None
+    transcripts: bool = False
+    proxy_config: Optional[ProxyConfig] = None
 
     def auth_opts(self) -> Dict[str, Any]:
         """Return yt_dlp options carrying cookie auth, empty when unset.

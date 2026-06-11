@@ -11,6 +11,8 @@ from concurrent.futures import (Future, ThreadPoolExecutor, as_completed)
 from pathlib import Path
 from typing import (Any, Dict, List, Optional, Set)
 
+from youtube_transcript_api.proxies import ProxyConfig
+
 from scraper.config import ScraperConfig
 from scraper.extractor import (download_wav, fetch_metadata, list_entries,
                               playlist_title)
@@ -34,6 +36,8 @@ def process_video(
     run_dir: Path,
     width: int,
     auth_opts: Optional[Dict[str, Any]] = None,
+    use_transcript_api: bool = False,
+    proxy_config: Optional[ProxyConfig] = None,
 ) -> VideoRecord:
     """Process a single video into a complete record.
 
@@ -48,6 +52,8 @@ def process_video(
         run_dir: The run root, used to compute the relative ``audio_path``.
         width: Zero-padding width for the filename index.
         auth_opts: Optional extra yt_dlp options (e.g. cookies) to merge in.
+        use_transcript_api: Whether to query ``youtube_transcript_api``.
+        proxy_config: Optional Webshare proxy config for the transcript API.
 
     Returns:
         A successful record, or an error record on failure.
@@ -59,7 +65,9 @@ def process_video(
         snippets: Optional[List[TranscriptSnippet]]
         language: Optional[str]
         source: Optional[str]
-        snippets, language, source = fetch_transcript(entry["video_id"], info)
+        snippets, language, source = fetch_transcript(
+            entry["video_id"], info, use_transcript_api, proxy_config
+        )
 
         stem: str = _file_stem(entry["index"], entry["video_id"], width)
         wav_path: Path = download_wav(entry["url"], audio_dir, stem, auth_opts)
@@ -136,7 +144,16 @@ def run(config: ScraperConfig) -> List[VideoRecord]:
     if pending:
         with ThreadPoolExecutor(max_workers=config.workers) as executor:
             futures: Dict[Future, PlaylistEntry] = {
-                executor.submit(process_video, entry, audio_dir, run_dir, width, auth_opts): entry
+                executor.submit(
+                    process_video,
+                    entry,
+                    audio_dir,
+                    run_dir,
+                    width,
+                    auth_opts,
+                    config.transcripts,
+                    config.proxy_config,
+                ): entry
                 for entry in pending
             }
             for future in as_completed(futures):

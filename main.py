@@ -12,7 +12,8 @@ import logging
 import sys
 from pathlib import Path
 
-from scraper.config import (ScraperConfig, check_ffmpeg, setup_logging)
+from scraper.config import (ScraperConfig, check_ffmpeg, load_proxy_config,
+                            setup_logging)
 from scraper.pipeline import run
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -72,6 +73,15 @@ def get_parser() -> argparse.ArgumentParser:
             "to get past region/age/bot walls."
         ),
     )
+    parser.add_argument(
+        "--transcripts",
+        action="store_true",
+        help=(
+            "Enable youtube_transcript_api for transcripts (default: off). "
+            "Reads Webshare proxy_username/proxy_password from .env when present. "
+            "Regardless of this flag, yt_dlp auto-subtitles are used as a fallback."
+        ),
+    )
     return parser
 
 
@@ -107,6 +117,8 @@ def main(argv: list = sys.argv[1:]) -> int:
         force=args.force,
         cookies=args.cookies,
         cookies_from_browser=args.cookies_from_browser,
+        transcripts=args.transcripts,
+        proxy_config=load_proxy_config() if args.transcripts else None,
     )
 
     try:
