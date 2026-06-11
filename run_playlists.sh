@@ -2,8 +2,8 @@
 #
 # run_playlists.sh — Batch-run the YouTube scraper over a list of playlists.
 #
-# Playlist URLs are read from a text file (default: playlists.txt), one URL per
-# line. Blank lines and lines starting with '#' are ignored.
+# Playlist URLs are read from a text file (default: data/input/playlists.txt),
+# one URL per line. Blank lines and lines starting with '#' are ignored.
 #
 # Transcripts are OFF for this batch (the --transcripts flag is omitted), so
 # transcripts come only from yt_dlp auto-subtitles. Add --transcripts to the
@@ -27,9 +27,9 @@ if [[ -f ".venv/bin/activate" ]]; then
 fi
 
 # --- Configuration -----------------------------------------------------------
-OUTPUT_DIR="output"
+OUTPUT_DIR="data/output"
 WORKERS=4
-PLAYLISTS_FILE="${PLAYLISTS_FILE:-playlists.txt}"
+PLAYLISTS_FILE="${PLAYLISTS_FILE:-data/input/playlists.txt}"
 # -----------------------------------------------------------------------------
 
 if [[ ! -f "$PLAYLISTS_FILE" ]]; then

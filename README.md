@@ -60,7 +60,7 @@ python main.py "<url>" --force
 | Option | Default | Description |
 |---|---|---|
 | `url` (positional) | — | A YouTube **playlist** URL or a single **video** URL. Required. |
-| `--output-dir DIR` | `output/` | Base output directory. Each run writes to `output/<slug>/`. |
+| `--output-dir DIR` | `data/output/` | Base output directory. Each run writes to `data/output/<slug>/`. |
 | `--workers N` | `4` | Number of concurrent worker threads. Use `1–2` if you hit rate limits. |
 | `--force` | off | Re-process videos even if already present in the output. |
 | `--cookies FILE` | none | Path to a Netscape-format `cookies.txt`. Use to get past region/age/bot walls (HTTP 403). |
@@ -73,7 +73,7 @@ python main.py "<url>" --force
 Each run is named by a normalized slug of the playlist/video title:
 
 ```
-output/
+data/output/
 └── <slug>/
     ├── metadata.jsonl        # one JSON record per video (combined metadata + transcript)
     └── audio/

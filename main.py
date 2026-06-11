@@ -41,8 +41,8 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("output"),
-        help="Base output directory (default: output/).",
+        default=Path("data/output"),
+        help="Base output directory (default: data/output/).",
     )
     parser.add_argument(
         "--workers",
