@@ -62,6 +62,7 @@ python main.py "<url>" --force
 | `url` (positional) | — | A YouTube **playlist** URL or a single **video** URL. Required. |
 | `--output-dir DIR` | `data/output/` | Base output directory. Each run writes to `data/output/<slug>/`. |
 | `--workers N` | `4` | Number of concurrent worker threads. Use `1–2` if you hit rate limits. |
+| `--transcripts` | off | Master on/off switch for transcripts. When **on**, fetches captions (`youtube_transcript_api` first, then yt_dlp auto-subtitles); reads Webshare `proxy_username`/`proxy_password` from `.env` when present. When **off** (default), **no transcript is fetched** — `transcript` and `transcript_source` are `null`, but audio + metadata are still produced. |
 | `--force` | off | Re-process videos even if already present in the output. |
 | `--cookies FILE` | none | Path to a Netscape-format `cookies.txt`. Use to get past region/age/bot walls (HTTP 403). |
 | `--cookies-from-browser NAME` | none | Load cookies directly from a browser (`chrome`, `safari`, `firefox`, …). |
@@ -122,8 +123,8 @@ aborts the run.
 1. **List** playlist entries (`scraper/extractor.py`).
 2. **Resume:** skip videos already completed (see below).
 3. **Process** each pending video concurrently in a thread pool: fetch metadata →
-   fetch transcript (`scraper/transcripts.py`) → download + convert audio to WAV
-   (`download_wav`).
+   fetch transcript (`scraper/transcripts.py`, only when `--transcripts` is on) →
+   download + convert audio to WAV (`download_wav`).
 4. **Merge** results atomically into `metadata.jsonl`, ordered by playlist index.
 
 ### Module map
@@ -149,8 +150,8 @@ Re-running the same URL is safe and resumes where it left off:
   already exists. Incomplete/zero-byte files are re-downloaded.
 - Use `--force` to override and re-process everything.
 
-This makes a **transcript-only top-up run** cheap: existing WAVs are skipped and only
-missing transcripts are re-fetched.
+This makes a **transcript-only top-up run** cheap: re-run with `--transcripts` and
+`--force`; existing WAVs are skipped and only the transcripts are re-fetched.
 
 ---
 
@@ -161,7 +162,8 @@ missing transcripts are re-fetched.
 | `ffmpeg was not found on PATH` | Install ffmpeg (`brew install ffmpeg`). |
 | **HTTP 403** on download | Bot/age/region wall. Pass `--cookies-from-browser firefox` (or `--cookies cookies.txt`). If it persists, `pip install -U yt_dlp`. |
 | **HTTP 429 / "YouTube is blocking requests from your IP"** on transcripts | Rate limit / temporary IP block. Lower `--workers` (1–2), wait, or run behind a **VPN/proxy** (a different IP is the reliable fix). Audio downloads are unaffected; you can finish audio first and fetch transcripts later. |
-| Transcript is `null` for many videos | Usually the 429 IP block above, or the video genuinely has no captions. |
+| Transcript is `null` for **every** video | Transcripts are **off by default** — pass `--transcripts` to enable them. |
+| Transcript is `null` for many videos (with `--transcripts`) | Usually the 429 IP block above, or the video genuinely has no captions. |
 | Run seems to re-download existing audio | Should not happen anymore — `download_wav` skips existing non-empty WAVs. Check the file isn't zero-byte / `.part`. |
 
 > ⚠️ **WAV is uncompressed and large.** Roughly ~0.6 GB per hour of audio — a 100+ video
