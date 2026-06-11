@@ -152,32 +152,36 @@ def fetch_transcript(
 ) -> TranscriptResult:
     """Fetch a transcript, preferring captions over auto-generated subtitles.
 
-    When ``use_api`` is True, tries ``youtube_transcript_api`` first; on
-    missing/disabled captions or a retrieval error, falls back to yt_dlp auto
-    subtitles. When ``use_api`` is False, skips the API entirely and uses only
-    the yt_dlp auto-subtitle fallback. All failures are logged and result in an
-    empty result rather than an exception.
+    ``use_api`` is a master on/off switch for transcripts. When it is False, no
+    transcript is fetched at all (returns ``(None, None, None)``) — neither
+    ``youtube_transcript_api`` nor the yt_dlp auto-subtitle fallback runs. When
+    it is True, tries ``youtube_transcript_api`` first; on missing/disabled
+    captions or a retrieval error, falls back to yt_dlp auto subtitles. All
+    failures are logged and result in an empty result rather than an exception.
 
     Args:
         video_id: The 11-character YouTube video id.
         info: The raw yt_dlp info dict, used for the fallback path.
-        use_api: Whether to query ``youtube_transcript_api`` at all.
+        use_api: Whether to fetch a transcript at all (and query
+            ``youtube_transcript_api`` first when enabled).
         proxy_config: Optional Webshare proxy config for the API requests.
 
     Returns:
         A ``(snippets, language_code, source)`` tuple where ``source`` is
         ``"youtube_transcript_api"``, ``"yt_dlp_auto"``, or ``None``. When no
-        transcript exists, returns ``(None, None, None)``.
+        transcript exists (or ``use_api`` is False), returns ``(None, None, None)``.
     """
-    if use_api:
-        try:
-            result: TranscriptResult = _from_api(video_id, proxy_config)
-            if result[0]:
-                return result
-        except (NoTranscriptFound, TranscriptsDisabled):
-            logger.info("No youtube_transcript_api captions for %s", video_id)
-        except CouldNotRetrieveTranscript as exc:
-            logger.warning("youtube_transcript_api error for %s: %s", video_id, exc)
+    if not use_api:
+        return (None, None, None)
+
+    try:
+        result: TranscriptResult = _from_api(video_id, proxy_config)
+        if result[0]:
+            return result
+    except (NoTranscriptFound, TranscriptsDisabled):
+        logger.info("No youtube_transcript_api captions for %s", video_id)
+    except CouldNotRetrieveTranscript as exc:
+        logger.warning("youtube_transcript_api error for %s: %s", video_id, exc)
 
     logger.info("Falling back to yt_dlp auto subtitles for %s", video_id)
     return _from_yt_dlp_auto(info)

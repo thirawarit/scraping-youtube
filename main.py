@@ -77,9 +77,10 @@ def get_parser() -> argparse.ArgumentParser:
         "--transcripts",
         action="store_true",
         help=(
-            "Enable youtube_transcript_api for transcripts (default: off). "
-            "Reads Webshare proxy_username/proxy_password from .env when present. "
-            "Regardless of this flag, yt_dlp auto-subtitles are used as a fallback."
+            "Fetch transcripts (default: off). When on, queries "
+            "youtube_transcript_api first and falls back to yt_dlp auto-subtitles; "
+            "reads Webshare proxy_username/proxy_password from .env when present. "
+            "When off, no transcript is fetched (transcript is null)."
         ),
     )
     return parser
