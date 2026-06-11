@@ -2,6 +2,9 @@
 #
 # run_playlists.sh — Batch-run the YouTube scraper over a list of playlists.
 #
+# Playlist URLs are read from a text file (default: playlists.txt), one URL per
+# line. Blank lines and lines starting with '#' are ignored.
+#
 # Transcripts are OFF for this batch (the --transcripts flag is omitted), so
 # transcripts come only from yt_dlp auto-subtitles. Add --transcripts to the
 # python invocation below to enable youtube_transcript_api (and Webshare proxy
@@ -9,6 +12,7 @@
 #
 # Usage:
 #   ./run_playlists.sh
+#   PLAYLISTS_FILE=my-list.txt ./run_playlists.sh
 #
 set -euo pipefail
 
@@ -25,15 +29,29 @@ fi
 # --- Configuration -----------------------------------------------------------
 OUTPUT_DIR="output"
 WORKERS=4
-
-# Replace these placeholder URLs with your actual YouTube playlist URLs.
-# One URL per line; keep the surrounding parentheses.
-PLAYLISTS=(
-  "https://www.youtube.com/playlist?list=PLACEHOLDER_PLAYLIST_ID_1"
-  "https://www.youtube.com/playlist?list=PLACEHOLDER_PLAYLIST_ID_2"
-  "https://www.youtube.com/playlist?list=PLACEHOLDER_PLAYLIST_ID_3"
-)
+PLAYLISTS_FILE="${PLAYLISTS_FILE:-playlists.txt}"
 # -----------------------------------------------------------------------------
+
+if [[ ! -f "$PLAYLISTS_FILE" ]]; then
+  echo "Error: playlists file not found: ${PLAYLISTS_FILE}" >&2
+  echo "Create it with one YouTube playlist URL per line." >&2
+  exit 1
+fi
+
+# Read URLs from the file, skipping blank lines and '#' comments.
+PLAYLISTS=()
+while IFS= read -r line || [[ -n "$line" ]]; do
+  line="${line%$'\r'}"                       # strip trailing CR (CRLF files)
+  line="${line#"${line%%[![:space:]]*}"}"    # ltrim
+  line="${line%"${line##*[![:space:]]}"}"    # rtrim
+  [[ -z "$line" || "$line" == \#* ]] && continue
+  PLAYLISTS+=("$line")
+done < "$PLAYLISTS_FILE"
+
+if [[ ${#PLAYLISTS[@]} -eq 0 ]]; then
+  echo "Error: no playlist URLs found in ${PLAYLISTS_FILE}" >&2
+  exit 1
+fi
 
 total=${#PLAYLISTS[@]}
 failed=0
